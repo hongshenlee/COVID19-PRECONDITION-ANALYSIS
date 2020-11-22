@@ -1,0 +1,173 @@
+---
+title: "A&A Project : Covid-19 Precondition Anslysis."
+author: "Hongshen_Lee"
+date: "11/22/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Are you in danger of being affected by Corona Virus?
+
+## 1.Acknowleagement
+
+### 1.1 Background
+
+Coronavirus disease (covid-19) is a newly discovered infectious disease caused by a coronavirus. It is a kind of virus that is aimed at the respiratory tract of susceptible patients. According to WHO, this is the fourteenth worldwide pandemic. Due to the characteristics of today's world, the epidemic is the most widespread and is suffering almost all over the world.
+
+Most people infected with covid-19 experience mild to moderate respiratory disease that can be cured without special treatment. Older people, as well as those with underlying diseases such as cardiovascular disease, diabetes, chronic respiratory disease, and cancer, are more likely to develop serious diseases.
+
+Obviously, the virus has different degrees of impact on different physical conditions. I hope to be able to find out the relationship between the preconditions and the severity of symptoms after infection. This study will help us to make more informed decisions on what aspects we can consciously protect ourselves, how to protect specific vulnerable groups, and what degree of measures should be taken for people infected with the virus.
+
+
+### 1.2 Dataset Description
+
+This data-set was released by the Mexican government. This data-set contains 566,602 records of anonymised patient-related information.
+
+**Data Dictionary:**
+
+1. `id`: The identification number of the patient
+1. `sex`: Identify gender of the patient, 1 as female and 2 as male.
+1. `patient_type`: Type of patient, 1 for not hospitalized and 2 for hosptalized.
+1. `entry_date`: The date that the patient went to the hospital.
+1. `date_symptoms`: The date that the patient started to show symptoms.
+1. `date_died`: The date that the patient died, “9999-99-99” stands for recovered.
+1. `intubed`: Intubation is a procedure that’s used when you can’t breathe on your own. Your doctor puts a tube down your throat and into your windpipe to make it easier to get air into and out of your lungs. A machine called a ventilator pumps in air with extra oxygen. Then it helps you breathe out air that’s full of carbon dioxide (CO2). “1” denotes that the patient used ventilator and “2” denotes that the patient did not, “97” “98” “99” means not specified.
+1. `pneumonia`: Indicates whether the patient already have air sacs inflammation or not “1” for yes, “2” for no, “97” “98” “99” means not specified.
+1. `age`: Specifies the age of the patient.
+1. `pregnancy`: Indicates whether the patient is pregnant or not, “1” for yes, “2” for no, “97” “98” “99” means not specified.
+1. ``diabetes`: Indicates whether the patient has diabetes or not, “1” for yes, “2” for no, “97” “98” “99” means not specified.
+1. `copd`: Indicates whether the patient has Chronic obstructive pulmonary disease (COPD) or not, “1” for yes, “2” for no, “97” “98” “99” means not specified.
+1. `asthma`: Indiactes whether the patient has asthma or not, “1” for yes, “2” for no, “97” “98” “99” means not specified.
+1. `inmsupr`: Indicates whether the patient is immunosuppressed or not, “1” for yes, “2” for no, “97” “98” “99” means not specified.
+1. `hypertension`: Indicates whether the patient has hypertension or not, “1” for yes, “2” for no, “97” “98” “99” means not specified.
+1. `other_disease`: Indicates whether the patient has other disease or not, “1” for yes, “2” for no, “97” “98” “99” means not specified.
+1. `cardiovascular`: Indicates whether if the patient has heart or blood vessels realted disease, “1” for yes, “2” for no, “97” “98” “99” means not specified.
+1. `obesity`: Indicates whether the patient is obese or not, “1” for yes, “2” for no, “97” “98” “99” means not specified.
+1. `renal_chronic`: Indicates whether the patient has chronic renal disease or not, “1” for yes, “2” for no, “97” “98” “99” means not specified.
+1. `tobacco`: Indicates whether if the patient is a tobacco user, “1” for yes, “2” for no, “97” “98” “99” means not specified.
+1. `contact_other_covid: Indicates whether if the patient has contacted another covid19 patient.
+1. `icu`: Indicates whether the if the patient had been admitted to an Intensive Care Unit (ICU), “1” for yes, “2” for no, “97” “98” “99” means not specified.
+1. `covid_res`: 1 indicates person is covid +ve,2 indicates person is covide -ve,3 indicates result is in awaiting process
+
+### 1.3 Work Blueprint
+
+1. Summarize the data to give descriptive statistics
+1. Clean and normalize the data 
+1. Build the Linear Regression Model to determine the factor affecting the results.
+
+**Notes:**
+
+The analysis is valid for Mexico or maybe North America. The pandemic stats and behaviors are extremely different for Asian countries when compared to North American or European countries owing to a far lower case fatality rate for Asia.
+
+
+## 2.Data Processing
+
+```{r includes, echo=F, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(tidyverse)
+library(scales)
+library(readr)
+library(forcats)
+library(broom)
+```
+
+### 2.1 Load And Clean Data
+
+1. As mentioned above, `97`,`98`and `99` have no specific meanings
+
+1. For most fields, `1` represents yes, `2` represents no
+
+```{r data-input, message=F}
+input.data.file <- "./data/covid.csv"
+
+d <- read_csv(input.data.file)
+
+d[d==97] <- NA
+d[d==98] <- NA
+d[d==99] <- NA
+
+
+head(d)
+```
+
+### 2.2 Data Exploration
+
+Since there are many two-value(yes or no) fields, we can consider whether it's a valid
+factor by comparing their counts in different `covid_res` groups.
+
+```{r dataset_summary}
+
+field_analysis<-function(d,field)
+{
+  d %>% 
+  count(covid_res,{{field}}) %>%
+  ggplot(mapping = aes(
+    x = covid_res, 
+    y = n,
+    fill ={{field}} ))+ 
+  geom_col(position = "fill") +
+  labs(y = NULL)
+}
+
+field_analysis(d,sex)
+field_analysis(d,intubed)
+field_analysis(d,pneumonia)
+field_analysis(d,pregnancy)
+field_analysis(d,diabetes)
+field_analysis(d,copd)
+field_analysis(d,asthma)
+field_analysis(d,inmsupr)
+field_analysis(d,hypertension)
+field_analysis(d,other_disease)
+field_analysis(d,cardiovascular)
+field_analysis(d,obesity)
+field_analysis(d,renal_chronic)
+field_analysis(d,tobacco)
+field_analysis(d,contact_other_covid)
+field_analysis(d,icu)
+```
+
+From the graphs above, we can know fields like `copd`,`asthma`, `inmsupr`,`other_disease`, `cardiovascular`,`renal_chronic` have similar distributions among different three  `covid_res` groups.
+
+Secondly, according to their difference degrees of the distributions, we can consider the most effective factors are ordered as:  `contact_other_covid`,`obesity`,`hypertension`,`pneumonia`,`diabetes`,`pregnancy`,`sex`,`icu`,`intubed`,`tobacco`
+
+```{r dataset_summary_age}
+d %>% 
+  count(covid_res,age) %>%
+  ggplot(mapping = aes(
+    x = age, 
+    y = n,
+    fill =covid_res))+ 
+  geom_col(position = "fill") +
+  labs(y = NULL)
+```
+Thirdly, From the above plot, we see that around 75 aged people are maximum followed by around 50 and then, 25. The age is obviously related to the result
+
+## 3 Model
+
+From the rough analysis above, we can take some fields as the important candidates to build our models.
+They are `contact_other_covid`,`obesity`,`hypertension`,`pneumonia`,`diabetes`,`pregnancy`,`sex`,`icu`,`intubed`,`tobacco` and `age`.
+
+```{r model, echo=FALSE}
+
+reg.lm <- lm(covid_res ~ contact_other_covid + 
+                    obesity+hypertension+pneumonia+diabetes+pregnancy+sex+icu+intubed+tobacco+age,
+                  data=d)
+
+summary(reg.lm)
+anova(reg.lm)
+
+
+```
+## 4 Conclusion
+
+Consistent with our previous analysis, these variables have an impact on the final result, because their p-values are less than 0.05, which means significant.
+
+Different fields have different `Estimate ` and `F-vallue`, which means they would have different degree impacts on the `covid_res` results.
+
+In conclusion, `obesity`, `pregnancy`,`intubed`,`tobacco`,`contact_other_covid` are relatively more Influential
+
